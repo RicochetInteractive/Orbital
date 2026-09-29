@@ -372,3 +372,85 @@ footer {
 }
 
 header small { font-size: 11px; color: #b3d4d9; }
+
+/* Consola de campaña: metal oscuro, señales ámbar y lectura táctica. */
+:root { --bg:#080f16; --panel:#111e28; --line:#30434d; --cyan:#a6ded4; --gold:#e7c58a; }
+body { background:radial-gradient(ellipse at top left,#1b3037,transparent 65%),var(--bg); }
+header { height:64px; background:#0c161eed; border-bottom:1px solid #52605a; padding:0 24px; }
+h1 { letter-spacing:.22em; font-size:24px; color:#f1dec0; }
+header small { display:block; margin-top:3px; font-size:9px; letter-spacing:.3em; }
+.layout { max-width:1920px; grid-template-columns:minmax(0,1fr) 340px; gap:10px; padding:12px; }
+.field { height:calc(100dvh - 108px); min-height:600px; max-height:1100px; border-radius:3px; border-color:#405651; }
+.control-panel { max-height:calc(100dvh - 108px); overflow:auto; scrollbar-color:#4b6766 #101c25; border-radius:3px; padding:12px; box-shadow:inset 0 1px #ffffff09; }
+.stats { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+.stat { border:1px solid #31464b; border-radius:3px; background:#0a151c; padding:10px; font-size:14px; }
+.stat strong { font-variant-numeric:tabular-nums; color:#f0d8a5; }
+button { transition:background .15s,border-color .15s; }
+button:focus-visible,select:focus-visible,summary:focus-visible { outline:2px solid #efd79a; outline-offset:3px; }
+button:disabled { cursor:not-allowed; }
+.tabs { gap:0; margin:7px 0 10px; border-bottom:1px solid #47615c; }
+.tabs button { border:0; border-radius:0; background:#14232c; color:#a9bebd; }
+.tabs button.active { background:#2c403d; color:#ffe3ad; box-shadow:inset 0 -2px #d4b477; }
+.section-label { font-size:9px; letter-spacing:.2em; color:#7d9a99; margin:16px 0 7px; }
+.panel-list { grid-template-columns:1fr 1fr; gap:6px; }
+.panel-list button { min-height:62px; border-radius:3px; background:linear-gradient(145deg,#253940,#192a32); border:1px solid #46615e; font-size:12px; }
+.panel-list button:hover:not(:disabled) { background:#344c4c; border-color:#c4b586; }
+.panel-list button:has(img) { display:flex; align-items:center; gap:7px; padding:7px; }
+.panel-list button img { object-fit:contain; flex:none; filter:drop-shadow(0 2px 2px #0008); }
+.panel-list button span { min-width:0; }
+.panel-list button small { margin-top:4px; font-size:9px; color:#c0c9b5; }
+.panel-list button:disabled { opacity:.5; }
+.panel-list p { grid-column:1/-1; font-size:11px; line-height:1.5; padding:6px 0; }
+.command-strip,.tactical,.group-bar { display:flex; gap:5px; margin-top:8px; }
+.command-strip button,.tactical button,.group-bar button,.pause-overlay button { flex:1; border:1px solid #47605e; border-radius:3px; padding:9px 5px; background:#1c3036; font-size:11px; min-height:38px; }
+.tactical .active { color:#ffe4a8; background:#51452c; border-color:#dcc184; }
+.readout { background:#0b171e; border-left:2px solid #bda779; padding:10px; margin:12px 0; }
+#selected { font-size:12px; color:#f4dfb6; margin-bottom:6px; }
+#status { font-size:12px; min-height:32px; margin-top:8px; }
+.operations { border-top:1px solid #2b4045; padding:10px 0; font-size:11px; color:#9fbab9; }
+.operations summary { color:#d5dfd5; cursor:pointer; padding:3px 0; font-size:12px; }
+.operations p { line-height:1.6; }
+.operations select { width:100%; background:#122630; color:#e7dfcc; border:1px solid #4e6664; padding:9px 4px; margin-top:7px; font:inherit; }
+#productionList { margin-top:10px; }
+.production-row { display:flex; gap:4px; margin-bottom:5px; }
+.production-row button { background:#192e35; border:1px solid #3b5559; border-radius:2px; padding:7px; font-size:10px; text-align:left; }
+.production-row button:first-child { flex:1; }
+.production-row button:last-child:not(:first-child) { width:32px; text-align:center; font-size:18px; }
+progress { display:block; width:100%; height:4px; margin-top:6px; accent-color:#c8b07a; }
+.mission { position:absolute; left:18px; top:18px; display:grid; gap:5px; pointer-events:none; text-shadow:0 2px 5px #000; background:#0b1b22d9; border-left:2px solid #d8bb7f; padding:10px 14px; }
+.mission small { color:#c6b489; letter-spacing:.2em; font-size:9px; }
+.mission strong { color:#e1e8d7; font-size:12px; font-weight:500; }
+.mission span { color:#9cb7b4; font-size:10px; }
+.enemy-legend { top:auto; bottom:174px; right:12px; border-radius:2px; border-color:#405955; background:#0b1b22db; }
+.mapbar { border-radius:3px; border-color:#829484; background:#0a1820ed; max-width:228px; }
+.mapbar span { line-height:1.4; }
+#minimap { width:210px; height:130px; }
+.view-controls button { border-radius:3px; background:#0c202be6; border-color:#5b7772; }
+.pause-overlay { position:absolute; inset:0; z-index:3; background:#09131bcf; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:18px; backdrop-filter:blur(3px); }
+.pause-overlay[hidden] { display:none; }
+.pause-overlay strong { color:#efdab4; letter-spacing:.18em; font-size:clamp(17px,2vw,28px); }
+.pause-overlay span { color:#a6bbb9; }
+.pause-overlay button { flex:0; width:180px; }
+.faction-panel { width:min(90%,470px); background:linear-gradient(145deg,#192d36f5,#0b1923fa); border:1px solid #bdab7b; border-radius:3px; padding:26px; }
+.faction-panel h2 { color:#f2dbb1; font-size:26px; font-weight:500; }
+.faction-panel p { color:#a6bcb9; font-size:12px; }
+.faction-panel button { background:#1a3039; border:1px solid #45635f; border-radius:3px; padding:13px; font-size:11px; }
+.faction-panel button:hover { background:#2b4447; border-color:#d7bc83; }
+.faction-panel button strong { display:block; font-size:14px; letter-spacing:.12em; color:#eddbb7; }
+.faction-panel button small { display:block; margin:5px 0 8px; color:#99c4bb; }
+.extra-actions button { border-radius:3px; font-size:11px; min-height:36px; }
+footer { max-width:1920px; font-size:10px; color:#7c969a; }
+@media(max-width:1000px) and (min-width:801px) { .layout { grid-template-columns:minmax(0,1fr) 290px; } .mission strong { max-width:180px; } }
+@media(max-width:800px) {
+  header { height:48px; padding:0 12px; } h1 { font-size:18px; } header small { display:inline; font-size:8px; }
+  .layout { display:block; padding:0; } .field { height:100%; min-height:0; border-radius:0; }
+  .control-panel { max-height:none; padding:8px 10px 18px; }
+  .stats { grid-template-columns:repeat(4,1fr); } .stat { padding:6px; font-size:11px; }
+  .mission { top:8px; left:8px; padding:7px 9px; } .mission strong { display:none; }
+  .enemy-legend { bottom:123px; right:7px; display:flex; gap:6px; font-size:8px; }
+  #minimap { width:150px; height:93px; } .mapbar { max-width:160px; }
+  .section-label { margin-top:10px; } .panel-list button { min-height:48px; }
+  .faction-panel { padding:16px; } .faction-panel h2 { font-size:22px; }
+  .faction-panel button { padding:9px; } .faction-panel button small { margin:3px 0; }
+  .readout { max-height:none; } #selected { display:block; }
+}

@@ -1,0 +1,6 @@
+.browser-*/
+browser-errors.log
+debug.log
+test-results.html
+test-results-*.html
+artifacts/

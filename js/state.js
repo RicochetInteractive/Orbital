@@ -1,6 +1,6 @@
 // Estado compartido de la partida y referencias a los lienzos. Se carga primero.
 'use strict';
-const c = document.querySelector('#game'), g = c.getContext('2d'), mini = document.querySelector('#minimap'), mg = mini.getContext('2d'), $ = id => document.getElementById(id), W = 2400, H = 1500, T = 40, COLS = W / T, ROWS = H / T;
+const c = document.querySelector('#game'), g = c.getContext('2d'), mini = document.querySelector('#minimap'), mg = mini.getContext('2d'), $ = id => document.getElementById(id), W = 2400, H = 1500, T = 40, COLS = W / T, ROWS = Math.ceil(H / T);
 const miniTerrain = document.createElement('canvas');
 miniTerrain.width = 210;
 miniTerrain.height = 130;

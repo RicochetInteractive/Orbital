@@ -1,0 +1,36 @@
+<!doctype html><meta charset="utf-8"><title>Órbita · pruebas de regresión</title>
+<pre id="results">Ejecutando…</pre><iframe id="subject" src="../game.html" style="width:1280px;height:900px"></iframe>
+<script>
+const results = document.querySelector('#results');
+document.querySelector('#subject').onload = function () {
+    const w = this.contentWindow, lines = [];
+    function check(name, code) {
+        try { if (!w.eval(code)) throw Error('La condición no se cumple'); lines.push('PASS ' + name); }
+        catch (error) { lines.push('FAIL ' + name + ': ' + error.message); }
+    }
+    check('Arranque y selección de facción', "chooseFaction('colonos'); paused = true; started && units.length === 15 && $('missionProgress').textContent.includes('0 / 3')");
+    check('Cola reserva recursos y población sin aparición instantánea', "paused = false; spawn('worker'); paused = true; ore === 310 && supply().used === 7 && units.filter(u => u.team === 'blue').length === 6");
+    check('Producción completa tras diez segundos', "updateCommand(10); units.filter(u => u.team === 'blue').length === 7 && supply().used === 7");
+    check('Cancelar devuelve recursos y libera suministros', "paused = false; spawn('worker'); paused = true; document.querySelector('.production-row button:last-child').onclick(); ore === 310 && supply().used === 7");
+    check('Obra no desbloquea tecnología hasta completarse', "var testBuilding = building('barracks', 'blue', 200, 700); testBuilding.buildTime = testBuilding.buildTotal = 20; testBuilding.hp = testBuilding.max * .45; !has('barracks') && (updateCommand(20), has('barracks'))");
+    check('Producción bloqueada si se pierde capacidad', "ore = 5000; paused = false; spawn('soldier'); spawn('soldier'); spawn('soldier'); var depot = building('depot', 'blue', 150, 800); spawn('soldier'); depot.hp = 0; updateCommand(30); paused = true; testBuilding.training.length === 4");
+    check('Punto de reunión de una unidad producida', "depot.hp = depot.max; testBuilding.rally = {x: 340, y: 600}; updateCommand(.1); units.at(-1).order.x === 340");
+    check('Mover no se convierte en persecución', "units = []; buildings = [building('base','blue',100,500),building('base','red',2200,300)]; var mover = unit('soldier','blue',200,550); var enemy = unit('raider','red',230,550); mover.order = {kind:'move',x:200,y:700}; var hp = enemy.hp; tick(.05); enemy.hp === hp && mover.y > 550");
+    check('Mantener posición no persigue', "enemy.x = 340; mover.order = {kind:'hold'}; var x = mover.x, y = mover.y; tick(.05); mover.x === x && mover.y === y");
+    check('La artillería retrocede realmente', "var artillery = unit('artillery','blue',250,600); enemy.x = 275; enemy.y = 600; var before = dist(artillery,enemy); fight(artillery,enemy,.1); dist(artillery,enemy) > before");
+    check('Daño de área no afecta a aeronaves', "artillery.x = 100; artillery.y = 550; enemy.x = 220; enemy.y = 550; var air = unit('ship','red',225,550); var airHP = air.hp; artillery.cool = 0; fight(artillery,enemy,.1); air.hp === airHP");
+    check('Tributo reduce lealtad y produce ingresos', "units = []; villages = [{x:500,y:500,owner:'blue',loyalty:60,capture:0,bankTimer:0}]; building('castle','blue',500,550); taxPolicy = 'levy'; var oldOre = ore; updateVillages(8); villages[0].loyalty < 60 && ore === oldOre + 17");
+    check('Sin protección una aldea se independiza', "buildings = buildings.filter(b => b.type !== 'castle'); updateVillages(50); villages[0].owner === null");
+    check('Grupos excluyen bajas y pasajeros', "paused = false; ended = false; started = true; var member = unit('soldier','blue',100,500); selected = [member]; window.dispatchEvent(new KeyboardEvent('keydown',{key:'1',ctrlKey:true})); member.hp = 0; window.dispatchEvent(new KeyboardEvent('keydown',{key:'1'})); selected.length === 0");
+    check('Pausa bloquea compras', "paused = true; var bank = ore; spawn('worker'); ore === bank");
+    check('Guardado conserva transportes, carga y referencias', "reset(); chooseFaction('astrales'); var ship = unit('transport','blue',200,600); var passenger = units.find(u => u.team === 'blue' && u.type === 'soldier'); passenger.x = 200; passenger.y = 600; board(passenger,ship); var record = JSON.stringify(snapshot()); restoreSnapshot(JSON.parse(record)); var restoredShip = units.find(u => u.type === 'transport'); restoredShip.cargo.length === 1 && restoredShip.cargo[0].embarked === restoredShip && paused && faction === 'astrales'");
+    check('Un guardado inválido no altera la partida', "var oldUnits = units; try { restoreSnapshot({version:999}); } catch {} units === oldUnits");
+    check('Guardado local disponible', "saveGame(); JSON.parse(localStorage.getItem(SAVE_KEY)).version === 1");
+    check('Reinicio limpia estado táctico y político', "reset(); !paused && !inspected && !Object.keys(controlGroups).length && taxPolicy === 'balanced' && !started");
+    check('Simulación sostenida: diez minutos, IA y economía', "chooseFaction('mecanos'); for (var step = 0; step < 12000 && !ended; step++) tick(.05); paused = true; units.every(u => Number.isFinite(u.x) && Number.isFinite(u.hp)) && ore >= 0 && plasma >= 0 && Object.values(aiBank).every(b => b.ore >= 0 && b.plasma >= 0)");
+    check('Dibujo e interfaz completos tras la simulación', "draw(); updateUI(); document.querySelectorAll('#groupBar button').length === 5 && terrain.length === COLS * ROWS");
+    check('Construcción real y selección de edificios', "reset(); chooseFaction('colonos'); var spot = null; for (var yy=370; yy<750 && !spot; yy+=25) for (var xx=60; xx<360 && !spot; xx+=25) if(canPlace('barracks',{x:xx,y:yy})) spot={x:xx,y:yy}; place('barracks',spot); var built = buildings.find(b=>b.team==='blue' && b.type==='barracks'); selectAt(spot,{},false); built.buildTime === 20 && !has('barracks') && inspected === built");
+    results.textContent = lines.join('\n') + '\n' + lines.filter(x => x.startsWith('PASS')).length + '/' + lines.length + ' PASS';
+    document.title = lines.some(x => x.startsWith('FAIL')) ? 'FAIL' : 'PASS';
+};
+</script>

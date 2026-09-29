@@ -38,10 +38,10 @@ function aiStructure(team, type, target) {
     }
     return false;
 }
-function aiQueue(team, type) { let d = spec[type], workers = type === 'worker', air = d.kind === 'air', vehicle = d.kind === 'vehicle', source = buildings.find(b => b.team === team && !b.buildTime && !b.queue && b.type === (workers ? 'base' : air ? 'hangar' : vehicle ? 'workshop' : 'barracks')); if (!source || !aiSpend(team, d))
+function aiQueue(team, type) { let d = spec[type], workers = type === 'worker', air = d.kind === 'air', vehicle = d.kind === 'vehicle', source = buildings.find(b => b.team === team && b.hp > 0 && !b.buildTime && !b.queue && b.type === (workers ? 'base' : air ? 'hangar' : vehicle ? 'workshop' : 'barracks')); const cap = 10 + buildings.filter(b => b.team === team && b.type === 'depot' && b.hp > 0 && !b.buildTime).length * 6, used = units.filter(u => u.team === team && u.hp > 0).reduce((s, u) => s + spec[u.type].pop, 0) + buildings.filter(b => b.team === team && b.hp > 0 && b.queue).reduce((s, b) => s + spec[b.queue.type].pop, 0); if (!source || used + d.pop > cap || !aiSpend(team, d))
     return false; source.queue = { type, time: workers ? 10 : air ? 22 : vehicle ? 20 : 13 }; return true; }
 function aiProduction(dt) { for (let b of buildings) {
-    if (b.team === 'blue')
+    if (b.team === 'blue' || b.hp <= 0)
         continue;
     if (b.buildTime > 0) {
         if (!b.builder || b.builder.hp <= 0 || b.builder.order?.kind !== 'build' || b.builder.order.target !== b) {
@@ -50,9 +50,10 @@ function aiProduction(dt) { for (let b of buildings) {
                 b.builder.order = { kind: 'build', target: b };
         }
         if (b.builder && dist(b.builder, b) < b.r + 30) {
+            const remaining = b.buildTime;
             b.buildTime = Math.max(0, b.buildTime - dt);
+            b.hp = Math.min(b.max, b.hp + b.max * .55 * (remaining - b.buildTime) / (b.type === 'castle' ? 24 : b.type === 'tower' ? 15 : 20));
             if (!b.buildTime) {
-                b.hp = b.max;
                 b.builder.order = null;
                 b.builder = null;
             }
@@ -64,6 +65,9 @@ function aiProduction(dt) { for (let b of buildings) {
     b.queue.time -= dt;
     if (b.queue.time > 0)
         continue;
+    const cap = 10 + buildings.filter(v => v.team === b.team && v.type === 'depot' && v.hp > 0 && !v.buildTime).length * 6;
+    const reserved = units.filter(u => u.team === b.team && u.hp > 0).reduce((sum, u) => sum + spec[u.type].pop, 0) + buildings.filter(v => v.team === b.team && v.hp > 0 && v.queue).reduce((sum, v) => sum + spec[v.queue.type].pop, 0);
+    if (reserved > cap) continue;
     let type = b.queue.type, d = spec[type];
     let place = null;
     for (let radius of [b.r + 35, b.r + 55, b.r + 80, b.r + 110]) {
@@ -159,7 +163,7 @@ function aiThink(team) {
         aiStructure(team, 'lab');
         return;
     }
-    let cap = 12 + own.filter(b => b.type === 'depot' && !b.buildTime).length * 6, used = units.filter(u => u.team === team).reduce((n, u) => n + (spec[u.type].pop || 1), 0) + own.reduce((n, b) => n + (b.queue ? spec[b.queue.type].pop || 1 : 0), 0);
+    let cap = 10 + own.filter(b => b.type === 'depot' && !b.buildTime).length * 6, used = units.filter(u => u.team === team).reduce((n, u) => n + (spec[u.type].pop || 1), 0) + own.reduce((n, b) => n + (b.queue ? spec[b.queue.type].pop || 1 : 0), 0);
     if (used >= cap - 2 && own.filter(b => b.type === 'depot').length < 2) {
         aiStructure(team, 'depot');
         return;

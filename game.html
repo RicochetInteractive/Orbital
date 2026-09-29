@@ -17,7 +17,10 @@
   <script defer src="js/ai.js"></script>
   <script defer src="js/simulation.js"></script>
   <script defer src="js/renderer.js"></script>
+  <script defer src="js/terrain-art.js"></script>
   <script defer src="js/controls.js"></script>
+  <script defer src="js/command.js"></script>
+  <script defer src="js/storage.js"></script>
   <script defer src="js/main.js"></script>
 </head>
 <body>
@@ -35,7 +38,7 @@
 <strong id="placementText">Elige una posición</strong>
 <button id="cancelBuild">Cancelar</button>
 </div>
-<div class="mapbar">
+<div class="mission"><small>OPERACIÓN / SECTOR 07</small><strong>Conserva el núcleo. Domina el sector.</strong><span id="missionProgress">0 / 3 núcleos destruidos</span></div><div id="pauseOverlay" class="pause-overlay" hidden><strong>OPERACIÓN EN PAUSA</strong><span>Respira. Revisa el frente.</span><button id="resume">Continuar</button></div><div class="mapbar">
 <canvas id="minimap" width="210" height="130" aria-label="Minimapa interactivo">
 </canvas>
 <span>Los puntos muestran aldeas y ejércitos; los rastros, sus movimientos.</span>
@@ -51,9 +54,9 @@
 <div id="factionPanel" class="faction-panel">
 <h2>Elige tu facción</h2>
 <p>Cada una cambia el modo de jugar. Puedes elegir otra al reiniciar.</p>
-<button data-faction="colonos">🧭 Colonos · +20 % de carga · Pionero exclusivo</button>
-<button data-faction="mecanos">⚙️ Mecanos · +20 % de salud en vehículos · Coloso exclusivo</button>
-<button data-faction="astrales">✨ Astrales · +15 % de velocidad · Eco aéreo exclusivo</button>
+<button data-faction="colonos"><strong>01 / COLONOS</strong><small>Expansión y economía</small>+20 % de carga · Pionero exclusivo</button>
+<button data-faction="mecanos"><strong>02 / MECANOS</strong><small>Blindaje y asedio</small>+20 % de salud en vehículos · Coloso exclusivo</button>
+<button data-faction="astrales"><strong>03 / ASTRALES</strong><small>Movilidad y superioridad aérea</small>+15 % de velocidad · Eco exclusivo</button>
 </div>
 <div class="view-controls">
 <button id="zoomOut" aria-label="Alejar vista">−</button>
@@ -80,7 +83,7 @@
 <strong id="clock">00:00</strong>
 </div>
 </div>
-<div class="tabs">
+<div class="command-strip"><button id="pause">Pausa · P</button><button id="idleWorker">Obreros libres · 0</button></div><div class="section-label">CENTRO DE MANDO</div><div class="tabs">
 <button data-tab="units" class="active">Unidades</button>
 <button data-tab="buildings">Edificios</button>
 <button data-tab="research">Mejoras</button>
@@ -124,15 +127,16 @@
 <button id="unloadTransport">Descargar transporte</button>
 <p id="instructions">Selecciona con clic y da órdenes con clic derecho. Arrastra para seleccionar varias unidades.</p>
 </div>
-<div class="readout">
+<div class="section-label">ÓRDENES TÁCTICAS</div><div class="tactical"><button id="attackMove">Atacar · A</button><button id="hold">Posición · H</button><button id="stop">Detener · S</button></div><div id="groupBar" class="group-bar"></div><div class="readout">
 <p id="selected">Selecciona una unidad.</p>
 <div id="unitStats" class="unit-stats">
 </div>
-<p id="status">
+<p id="status" role="status" aria-live="polite">
 </p>
 </div>
-<div class="extra-actions">
+<details class="operations" open><summary>Producción y construcción</summary><div id="productionList"></div></details><details class="operations"><summary>Administración territorial</summary><p id="territorySummary"></p><label for="taxPolicy">Política de las aldeas</label><select id="taxPolicy"><option value="relief">Ayuda · 6 minerales / 8 s · recupera lealtad</option><option value="balanced">Equilibrio · 10 minerales / 8 s</option><option value="levy">Tributo · 17 minerales / 8 s · pierde lealtad</option></select><p>Protege tus castillos. Sin apoyo o con lealtad agotada, las aldeas se independizan.</p></details><details class="operations"><summary>Manual de campo · controles</summary><p>Clic: seleccionar · clic derecho: mover o interactuar. A + clic: avanzar atacando. H: mantener posición. S: detener. Ctrl + 1–5: guardar grupo; 1–5: seleccionar; Alt + 1–5: centrar. I: obrero libre. Flechas: cámara. Inicio: núcleo. Rueda: zoom. P: pausa. Esc: cancelar. Selecciona un edificio y haz clic derecho para fijar su reunión.</p></details><div class="extra-actions">
 <button id="restart">Reiniciar partida</button>
+<div class="command-strip"><button id="saveGame">Guardar partida</button><button id="loadGame">Cargar partida</button></div>
 </div>
 </aside>
 </div>

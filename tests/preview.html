@@ -1,0 +1,17 @@
+<!doctype html><html lang="es"><meta charset="utf-8"><title>Órbita · vista de verificación</title>
+<style>html,body,iframe{margin:0;width:100%;height:100%;border:0;display:block;overflow:hidden}@media(max-width:800px){iframe{width:390px;max-width:100%}}</style>
+<iframe src="../game.html" title="Vista del juego"></iframe>
+<script>
+document.querySelector('iframe').onload = function () {
+    this.contentWindow.eval(`
+        chooseFaction('colonos');
+        const previewBarracks = building('barracks','blue',145,700);
+        ore = 390; plasma = 45;
+        spawn('soldier'); spawn('scout');
+        previewBarracks.rally = {x:380,y:680};
+        selected = units.filter(u => u.team === 'blue' && u.type === 'soldier');
+        controlGroups[1] = [...selected];
+        updateUI(); draw();
+    `);
+};
+</script></html>

@@ -39,7 +39,9 @@ En **Órbita: frente de ceniza**, cada decisión sostiene a la siguiente: los re
 
 Abre [index.html](index.html) en un navegador moderno y pulsa **Entrar al juego**. También puedes abrir [game.html](game.html) directamente. Conserva las carpetas del proyecto junto a los HTML: contienen los gráficos, estilos y sistemas del juego. No necesitas instalar dependencias, iniciar un servidor ni conectarte a internet.
 
-La partida comienza al elegir una facción. Esta versión ofrece escaramuzas locales contra la IA; no incluye guardado, carga de partidas, multijugador ni un botón de pausa. Recargar la página empieza de nuevo.
+La partida comienza al elegir una facción. Incluye **pausa, guardado y carga local**, colas de producción, órdenes tácticas y administración de aldeas. Usa **Guardar partida** antes de salir; **Cargar partida** recupera la última ranura de este navegador y deja la operación en pausa. El almacenamiento depende de los permisos del navegador; no hay guardado automático ni multijugador.
+
+La [revisión de diseño](docs/revision-rts.md) explica los cambios, sus referencias y los límites actuales.
 
 ---
 
@@ -99,9 +101,9 @@ Empiezas con **360 minerales, 0 plasma, 4 recolectores, 2 guardianes, un núcleo
 | **Mejoras** | Comprar niveles de Armamento, Blindaje y Motores. Requiere laboratorio. |
 | **Grupos** | Seleccionar todas las tropas, seleccionar recolectores, cargar y descargar transportes. |
 
-**Seleccionar tropas** reúne las unidades propias que no sean recolectores ni estén embarcadas, incluidos sanadores y transportes. **Seleccionar recolectores** reúne los trabajadores propios que no estén embarcados. Son selecciones rápidas; no son grupos numerados guardados.
+**Seleccionar tropas** reúne las unidades propias que no sean recolectores ni estén embarcadas, incluidos sanadores y transportes. **Seleccionar recolectores** reúne los trabajadores propios. Asigna cinco grupos con **Ctrl + 1–5**, selecciónalos con **1–5** y centra su posición con **Alt + 1–5**. Los grupos se conservan en el guardado.
 
-**Reiniciar partida** genera otra escaramuza y permite escoger de nuevo la facción. Se pierde la partida actual y el reinicio es inmediato.
+**Reiniciar partida** pide confirmación durante una operación activa y genera otra escaramuza. **P** pausa o continúa. Cambiar de pestaña del navegador pausa automáticamente la simulación.
 
 ### Ratón y teclado
 
@@ -110,12 +112,18 @@ Empiezas con **360 minerales, 0 plasma, 4 recolectores, 2 guardianes, un núcleo
 | Seleccionar una unidad propia | Clic izquierdo sobre ella. |
 | Seleccionar varias unidades | Arrastrar con el botón izquierdo para dibujar un recuadro. |
 | Añadir unidades a la selección | Mantener **Mayús / Shift** al hacer clic o arrastrar. |
-| Mover la selección | Clic derecho sobre el terreno. Las unidades de combate pueden detenerse a combatir enemigos cercanos. |
+| Mover la selección | Clic derecho sobre el terreno. Prioriza llegar al destino sin detenerse a combatir. |
+| Avanzar atacando | **A** y clic en el destino, o botón Atacar. |
+| Mantener posición / detener | **H** / **S**. Mantener posición permite disparar sin perseguir. |
+| Seleccionar un recolector libre | **I**, o botón Obreros libres. |
+| Seleccionar unidades del mismo tipo visibles | Doble clic sobre una unidad propia. |
+| Desplazar la cámara / volver al núcleo | Flechas / **Inicio**. |
+| Fijar punto de reunión | Seleccionar edificio propio y hacer clic derecho sobre el destino. |
 | Atacar un objetivo | Clic derecho sobre una unidad o edificio enemigo. |
 | Extraer recursos | Seleccionar recolectores y hacer clic derecho sobre un yacimiento. |
 | Embarcar tropas | Seleccionar unidades terrestres y hacer clic derecho sobre un transporte propio. |
 | Cambiar la zona visible | Clic sobre el minimapa. |
-| Acercar o alejar la vista | Botones **+** y **−**. |
+| Acercar o alejar la vista | Rueda del ratón o botones **+** y **−**. |
 | Colocar un edificio | Elegirlo en el panel y hacer clic izquierdo en una posición válida. |
 | Cancelar construcción | Botón **Cancelar** o tecla **Esc**. |
 | Vaciar la selección | **Esc**; también un clic izquierdo sobre terreno vacío fuera del modo de construcción. |
@@ -162,11 +170,11 @@ El castillo extiende tu presencia y permite construir una nueva base alrededor d
 | :--- | ---: | :--- |
 | Yacimiento de minerales | 255 unidades de mapa | Hasta **7 minerales cada 6 segundos**. Consume sus reservas. |
 | Yacimiento de plasma | 255 unidades de mapa | Hasta **4 de plasma cada 6 segundos**, con refinería. Consume sus reservas. |
-| Aldea | 280 unidades de mapa | **10 minerales cada 8 segundos**. |
+| Aldea | 280 unidades de mapa | **6, 10 o 17 minerales cada 8 segundos**, según la política. |
 
 La captura es gradual: el arco de progreso indica su avance. Si varios bandos disputan una posición, necesita imponerse la influencia de uno de ellos. Hasta **cinco unidades propias a menos de 115 unidades de mapa del castillo** refuerzan su influencia; cada una aporta un 22 % adicional.
 
-Las tropas apoyan al castillo, pero **no capturan por sí solas**. Perder el castillo cercano interrumpe los ingresos aunque el objetivo siga mostrando tu color.
+Las tropas apoyan al castillo, pero **no capturan por sí solas**. Perder el castillo cercano interrumpe los ingresos. Las aldeas empiezan con **60 de lealtad**: Ayuda entrega 6 minerales/8 s y recupera 2 puntos/s; Equilibrio entrega 10 y recupera 0,6 puntos/s; Tributo entrega 17 y pierde 1,2 puntos/s. Sin castillo de apoyo pierden 2 puntos/s. Al llegar a cero vuelven a ser neutrales. La IA usa Equilibrio.
 
 ## 05 · Unidades
 
@@ -228,7 +236,9 @@ Selecciona el edificio en su pestaña. La silueta y el indicador de posición mu
 
 Las estructuras normales necesitan un núcleo o castillo propio a menos de **390** unidades de mapa. Un castillo puede situarse a menos de **420** de esos edificios o a menos de **160** de un recolector propio no embarcado: envía un trabajador para establecer posiciones avanzadas.
 
-Necesitas terreno transitable y espacio libre, sin solaparte con edificios, aldeas o yacimientos activos. En esta versión, tus edificios aparecen al confirmar la posición y pagar el coste; no necesitas asignarles un constructor ni esperar un tiempo de obra.
+Necesitas terreno transitable y espacio libre, sin solaparte con edificios, aldeas o yacimientos activos. Las obras del jugador son automáticas: **24 segundos para castillos, 15 para torretas y 20 para los demás edificios**. Empiezan al 45 % de salud, pueden recibir daño y sólo aportan tecnología, suministros o influencia cuando terminan. Una obra no extiende todavía tu zona de construcción.
+
+Cada centro admite **cinco unidades en cola**. Los recolectores tardan 10 s; infantería y apoyo, 13 s; vehículos, 20 s; naves, 22 s. Los recursos se pagan y los suministros se reservan al encolar. La sección Producción permite centrar el edificio y cancelar la última unidad con devolución completa. Perder el centro destruye su cola. Si pierdes capacidad de suministro, la salida queda bloqueada hasta recuperarla. Selecciona un centro para priorizar su cola; su punto de reunión también admite recursos para los recolectores.
 
 ### Ruta tecnológica
 
@@ -267,7 +277,7 @@ Los incrementos se suman por nivel: Armamento III aporta **+60 %**, Blindaje III
 
 ### Avance y selección de objetivos
 
-Una orden al terreno hace avanzar a la selección. Los combatientes detectan enemigos cercanos y pueden interrumpir el trayecto para luchar. Para concentrar el fuego sobre una unidad o edificio concreto, da la orden directamente sobre ese objetivo.
+El clic derecho al terreno ordena **mover** y permite retirarse sin perseguir enemigos. **A + clic** ordena **avanzar atacando**: las tropas combaten y después reanudan el trayecto. **H** mantiene la posición sin perseguir; **S** cancela la orden actual y devuelve el comportamiento defensivo normal. El destino de un grupo se distribuye en filas. Para concentrar el fuego sobre una unidad o edificio, haz clic derecho directamente sobre el objetivo.
 
 Las unidades terrestres buscan caminos que eviten agua y riscos. Las aéreas cruzan esos obstáculos directamente. Usa el minimapa para coordinar frentes y el zoom para alternar entre la visión general y la colocación precisa.
 
@@ -351,6 +361,9 @@ Gráficos del juego de **Kenney**, publicados como recursos CC0: [Top-down Shoot
 | `js/simulation.js` | Actualización temporal de la partida. |
 | `js/renderer.js` | Cámara, zoom, campo de batalla y minimapa. |
 | `js/controls.js` | Controles y acciones de interfaz. |
+| `js/command.js` | Colas, órdenes tácticas, grupos, pausa y administración. |
+| `js/storage.js` | Guardado local y reconstrucción de referencias. |
+| `js/terrain-art.js` | Texturas y cristales procedurales; caché del terreno. |
 | `js/main.js` | Arranque del juego. |
 
 Los scripts clásicos con `defer` comparten ámbito y se ejecutan en el orden declarado en `game.html`. El arranque se carga al final. Esta estructura permite abrir el juego mediante `file://`, sin `fetch` ni servidor. Carga cualquier sistema nuevo antes de `main.js`.
@@ -365,6 +378,6 @@ Con Node.js disponible, ejecuta:
 node tests/regression.cjs
 ```
 
-La prueba compara la simulación separada con la revisión original guardada en Git: arranque, tres facciones, producción, mejoras, movimiento, reinicio y bytes de los sprites. Usa un DOM y un canvas simulados en configuraciones de móvil y escritorio; no sustituye la revisión visual en un navegador. Requiere conservar el historial original del repositorio. Puedes pasar otra revisión original como primer argumento.
+La prueba ejecuta `tests/game.test.html` en Edge, Chrome o Chromium sin ventana y comprueba producción, suministros, tácticas, artillería, política territorial, guardado, reinicio y diez minutos de simulación. No instala dependencias ni depende del historial Git. Si el navegador no está en una ruta conocida, define `BROWSER_PATH`. También puedes servir el repositorio con un servidor local y abrir `tests/game.test.html`. `tests/preview.html` es una escena de revisión visual para escritorio y móvil.
 
 </details>

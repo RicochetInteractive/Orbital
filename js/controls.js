@@ -1,20 +1,20 @@
 // Selección, órdenes, construcción y eventos de ratón, teclado y pantalla táctil.
 'use strict';
-function canPlace(type, p, team = 'blue') { let d = plans[type], homes = buildings.filter(b => b.team === team && b.hp > 0 && (b.type === 'base' || b.type === 'castle')), supported = type === 'castle' ? homes.some(b => dist(b, p) < 420) || units.some(u => u.team === team && u.type === 'worker' && !u.embarked && dist(u, p) < 160) : homes.some(b => dist(b, p) < 390); if (!supported || p.x < d.r + 10 || p.y < d.r + 10 || p.x > W - d.r - 10 || p.y > H - d.r - 10)
+function canPlace(type, p, team = 'blue') { let d = plans[type], homes = buildings.filter(b => b.team === team && b.hp > 0 && !b.buildTime && (b.type === 'base' || b.type === 'castle')), supported = type === 'castle' ? homes.some(b => dist(b, p) < 420) || units.some(u => u.team === team && u.type === 'worker' && !u.embarked && dist(u, p) < 160) : homes.some(b => dist(b, p) < 390); if (!supported || p.x < d.r + 10 || p.y < d.r + 10 || p.x > W - d.r - 10 || p.y > H - d.r - 10)
     return false; for (let dy = -d.r; dy <= d.r; dy += T / 2)
     for (let dx = -d.r; dx <= d.r; dx += T / 2)
         if (!walk(p.x + dx, p.y + dy))
             return false; return !buildings.some(b => dist(b, p) < b.r + d.r + 15) && !villages.some(v => dist(v, p) < d.r + v.r + 12) && !nodes.some(n => n.amount > 0 && dist(n, p) < d.r + 22); }
 function pos(e) { let r = c.getBoundingClientRect(); return { x: clamp((e.clientX - r.left) / camera.zoom + camera.x, 0, W), y: clamp((e.clientY - r.top) / camera.zoom + camera.y, 0, H) }; }
 function hit(p, touch = false) { let pad = touch ? Math.max(17, 23 / camera.zoom) : 5; return [...units.filter(u => !u.embarked), ...buildings].filter(o => dist(o, p) < o.r + pad).sort((a, b) => (dist(a, p) - a.r * .4) - (dist(b, p) - b.r * .4))[0]; }
-function order(p, touch = false) { if (!started || ended || !selected.length)
+function order(p, touch = false) { if (!started || ended || paused) return; if (inspected && !selected.length && inspected.team === 'blue' && !inspected.buildTime) { inspected.rally = { x: p.x, y: p.y }; commandMarker = { ...p, life: 1 }; say('Punto de reunión fijado.'); return; } if (!selected.length)
     return; let t = hit(p, touch), n = nodes.filter(n => n.amount > 0 && dist(n, p) < (touch ? 30 : 21)).sort((a, b) => dist(a, p) - dist(b, p))[0]; if (n?.owner && n.owner !== 'blue') {
     say('Yacimiento controlado por ' + enemyName[n.owner] + '. Captúralo con un castillo.');
     return;
 } if (n?.type === 'plasma' && !has('refinery')) {
     say('Construye una refinería para extraer plasma.');
     return;
-} let boarded = 0; for (let u of [...selected]) {
+} let boarded = 0, index = 0, columns = Math.ceil(Math.sqrt(selected.length)); commandMarker = { ...p, life: 1 }; for (let u of [...selected]) {
     if (t?.type === 'transport' && t.team === 'blue' && u !== t && spec[u.type].kind !== 'air') {
         if (board(u, t))
             boarded++;
@@ -25,10 +25,10 @@ function order(p, touch = false) { if (!started || ended || !selected.length)
     else if (t && foe(u, t) && u.type !== 'medic' && u.type !== 'transport')
         u.order = { kind: 'attack', target: t };
     else
-        u.order = { kind: 'attackMove', x: p.x + rand(-12, 12), y: p.y + rand(-12, 12) };
-    u.pathTarget = '';
-} say(boarded ? 'Embarcando ' + boarded + ' unidades.' : n ? 'Extrayendo ' + (n.type === 'plasma' ? 'plasma.' : 'minerales.') : t && foe({ team: 'blue' }, t) ? 'Objetivo marcado.' : 'Orden de movimiento enviada.'); updateUI(); }
-function setMode(type) { mode = type; $('placement').hidden = !type; $('enemyLegend').hidden = !!type; if (type) {
+        u.order = { kind: commandMode || 'move', x: clamp(p.x + (index % columns - (columns - 1) / 2) * 30, 20, W - 20), y: clamp(p.y + (Math.floor(index / columns) - (columns - 1) / 2) * 30, 20, H - 20) };
+    index++; u.pathTarget = '';
+} commandMode = ''; say(boarded ? 'Embarcando ' + boarded + ' unidades.' : n ? 'Extrayendo ' + (n.type === 'plasma' ? 'plasma.' : 'minerales.') : t && foe({ team: 'blue' }, t) ? 'Objetivo marcado.' : 'Orden de movimiento enviada.'); updateUI(); }
+function setMode(type) { if (type) commandMode = ''; mode = type; $('placement').hidden = !type; $('enemyLegend').hidden = !!type; if (type) {
     let home = buildings.find(b => b.team === 'blue' && b.type === 'base');
     $('placementText').textContent = 'Construir ' + plans[type].name + ' · toca una zona verde';
     if (home) {
@@ -38,7 +38,7 @@ function setMode(type) { mode = type; $('placement').hidden = !type; $('enemyLeg
 }
 else
     ghost = null; }
-function place(type, p) { let d = plans[type]; if (!canPlace(type, p)) {
+function place(type, p) { if (!started || ended || paused) return; let d = plans[type]; if (!canPlace(type, p)) {
     ghost = p;
     say('Zona ocupada, inaccesible o lejos del núcleo. Busca el círculo verde.');
     return;
@@ -46,9 +46,9 @@ function place(type, p) { let d = plans[type]; if (!canPlace(type, p)) {
     say('Faltan recursos o el edificio previo.');
     setMode('');
     return;
-} spend(d); building(type, 'blue', p.x, p.y); setMode(''); say(d.name + ' construido.'); updateUI(); }
-function selectAt(p, e, touch) { let t = hit(p, touch), village = villages.find(v => dist(v, p) < 34), resource = nodes.some(n => n.amount > 0 && dist(n, p) < 30); if (!t && village && !selected.length) {
-    say('Aldea ' + (village.owner ? village.owner === 'blue' ? 'aliada' : 'de ' + enemyName[village.owner] : 'neutral') + ' · un castillo cercano la captura · +10 minerales/8 s.');
+} spend(d); const b = building(type, 'blue', p.x, p.y); b.buildTime = b.buildTotal = type === 'castle' ? 24 : type === 'tower' ? 15 : 20; b.hp = Math.round(b.max * .45); setMode(''); say(d.name + ' en construcción.'); updateUI(); }
+function selectAt(p, e, touch) { if (touch && inspected && !hit(p, true)) { order(p, true); return; } if (commandMode) { order(p, touch); return; } inspected = null; let t = hit(p, touch), village = villages.find(v => dist(v, p) < 34), resource = nodes.some(n => n.amount > 0 && dist(n, p) < 30); if (!t && village && !selected.length) {
+    say('Aldea ' + (village.owner ? village.owner === 'blue' ? 'aliada · lealtad ' + Math.round(village.loyalty ?? 60) + '%' : 'de ' + enemyName[village.owner] : 'neutral') + ' · requiere apoyo de un castillo · ingreso según política.');
     updateUI();
     return;
 } if (!t && resource && !selected.length) {
@@ -62,6 +62,9 @@ else if (t?.team === 'blue' && t.type in spec) {
     selected = e.shiftKey ? [...new Set([...selected, t])] : [t];
     say(spec[t.type].name + ' seleccionado. Mira sus estadísticas abajo.');
 }
+else if (t?.team === 'blue' && t.type in plans) {
+    inspected = t; selected = [];
+}
 else if (touch && selected.length)
     order(p, true);
 else if (t && t.team !== 'blue') {
@@ -70,10 +73,10 @@ else if (t && t.team !== 'blue') {
 }
 else
     selected = []; updateUI(); }
-c.addEventListener('pointerdown', e => { if (e.button !== 0 || !started)
+c.addEventListener('pointerdown', e => { if (e.button !== 0 || !started || ended || paused)
     return; c.setPointerCapture(e.pointerId); let p = pos(e); drag = p; pointer = p; gesture = { type: e.pointerType, screenX: e.clientX, screenY: e.clientY, startX: e.clientX, startY: e.clientY, moved: false }; if (mode)
     ghost = p; });
-c.addEventListener('pointermove', e => { if (!gesture)
+c.addEventListener('pointermove', e => { if (mode) ghost = pos(e); if (!gesture)
     return; if (mode) {
     ghost = pos(e);
     return;
@@ -131,7 +134,7 @@ for (let button of document.querySelectorAll('[data-tab]'))
     button.onclick = () => { for (let other of document.querySelectorAll('[data-tab]'))
         other.classList.toggle('active', other === button); for (let id of ['units', 'buildings', 'research', 'groups'])
         $(id + 'Panel').hidden = id !== button.dataset.tab; };
-$('restart').onclick = reset;
+$('restart').onclick = () => { if (!started || ended || confirm('¿Reiniciar la operación? Se perderá la partida actual.')) reset(); };
 $('cancelBuild').onclick = () => { setMode(''); say('Construcción cancelada.'); };
 $('zoomIn').onclick = () => setZoom(camera.zoom * 1.25);
 $('zoomOut').onclick = () => setZoom(camera.zoom / 1.25);

@@ -1,64 +1,26 @@
-// Ejecutar con Node.js: node tests/regression.cjs [revision-original]
-// Compara la simulación extraída con el index.html original guardado en Git.
-const assert = require('node:assert/strict');
+// Ejecutar: node tests/regression.cjs. Navegador real, sin dependencias npm.
 const fs = require('node:fs');
-const vm = require('node:vm');
-const { execFileSync } = require('node:child_process');
+const os = require('node:os');
 const path = require('node:path');
-process.chdir(path.resolve(__dirname, '..'));
-const original = execFileSync('git', ['show', `${process.argv[2] || '3e2600399db4dba203462e118ca9d3613672d62b'}:index.html`], { encoding: 'utf8' });
-const inline = [...original.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].at(-1)[1];
-const oldCode = inline.replace(/\(\(\)=>\{'use strict';/, "'use strict';").replace(/\}\)\(\);\s*$/, '');
-const html = fs.readFileSync('game.html', 'utf8');
-const scripts = [...html.matchAll(/<script defer src="([^"]+)"/g)].map(match => match[1]);
-const spriteData = JSON.parse(original.match(/id="sprite-data">([\s\S]*?)<\/script>/)[1]);
-for (const [key, data] of Object.entries(spriteData)) {
-  assert.deepEqual(fs.readFileSync(`assets/sprites/${key}.png`), Buffer.from(data.split(',')[1], 'base64'));
+const { pathToFileURL } = require('node:url');
+const { spawnSync } = require('node:child_process');
+const candidates = [process.env.BROWSER_PATH,
+  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
+  'C:/Program Files/Google/Chrome/Application/chrome.exe',
+  '/usr/bin/chromium', '/usr/bin/chromium-browser', '/usr/bin/google-chrome',
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'].filter(Boolean);
+const browser = candidates.find(file => fs.existsSync(file));
+if (!browser) throw Error('Instala Edge/Chrome/Chromium o define BROWSER_PATH.');
+const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'orbita-regression-'));
+try {
+  const result = spawnSync(browser, ['--headless', '--disable-gpu', '--no-first-run', '--allow-file-access-from-files',
+    `--user-data-dir=${profile}`, '--dump-dom', '--virtual-time-budget=2000',
+    pathToFileURL(path.join(__dirname, 'game.test.html')).href], { encoding: 'utf8', timeout: 90000, maxBuffer: 8 * 1024 * 1024, windowsHide: true });
+  const report = result.stdout?.match(/<pre id="results">([\s\S]*?)<\/pre>/)?.[1];
+  if (!report || !/\d+\/\d+ PASS/.test(report)) throw Error(result.error?.message || 'El navegador no terminó las pruebas. ' + result.stderr?.slice(-1200));
+  console.log(report);
+  if (/FAIL/.test(report)) process.exitCode = 1;
+} finally {
+  // Exclusivamente la carpeta temporal creada por este proceso.
+  fs.rmSync(profile, { recursive: true, force: true, maxRetries: 3, retryDelay: 200 });
 }
-for (const match of html.matchAll(/(?:src|href)="([^"]+)"/g)) {
-  if (!match[1].startsWith('https:')) assert.ok(fs.existsSync(match[1]), match[1]);
-}
-function context(markup, mobile) {
-  const elements = new Map();
-  const ink = new Proxy({}, { get: (obj, key) => obj[key] || (() => {}), set: (obj, key, value) => (obj[key] = value, true) });
-  function element(id) {
-    return { id, hidden: false, textContent: '', dataset: {}, style: {}, clientWidth: mobile ? 390 : 1000, clientHeight: 600,
-      classList: { toggle() {} }, addEventListener() {}, setPointerCapture() {}, getContext: () => ink,
-      getBoundingClientRect: () => ({ left: 0, top: 0, width: mobile ? 390 : 1000, height: 600 }) };
-  }
-  for (const match of markup.matchAll(/id="([^"]+)"/g)) elements.set(match[1], element(match[1]));
-  elements.set('sprite-data', { textContent: JSON.stringify(spriteData) });
-  const buttons = attr => [...markup.matchAll(new RegExp(`data-${attr}="([^"]+)"`, 'g'))].map(match => ({ ...element(''), dataset: { [attr]: match[1] } }));
-  const factions = buttons('faction'), tabs = buttons('tab');
-  const math = Object.create(Math);
-  math.random = () => .314159;
-  const sandbox = { console, Math: math, performance: { now: () => 0 }, requestAnimationFrame() {},
-    matchMedia: () => ({ matches: mobile }), Image: class { complete = true; naturalWidth = 32; },
-    document: { getElementById: id => elements.get(id), querySelector: selector => elements.get(selector.slice(1)),
-      querySelectorAll: selector => selector === '[data-faction]' ? factions : tabs, createElement: () => element('') },
-    window: { devicePixelRatio: 1, addEventListener() {} } };
-  return vm.createContext(sandbox);
-}
-const snapshot = `JSON.stringify({faction,ore,plasma,seconds,started,ended,upgrades,camera,terrain,
-  units:units.map(u=>({type:u.type,team:u.team,x:u.x,y:u.y,hp:u.hp,max:u.max,order:u.order?.kind,carry:u.carry,embarked:!!u.embarked,cargo:u.cargo.length})),
-  buildings:buildings.map(b=>({type:b.type,team:b.team,x:b.x,y:b.y,hp:b.hp,queue:b.queue,buildTime:b.buildTime})),nodes,villages,aiBank,aiTech,aiPlans,
-  hud:['minerals','plasma','clock','supply','status','unitStats'].map(id=>[$(id).textContent,$(id).innerHTML])})`;
-for (const mobile of [false, true]) {
-  for (const faction of ['colonos', 'mecanos', 'astrales']) {
-    const before = context(original, mobile), after = context(html, mobile);
-    vm.runInContext(oldCode, before);
-    for (const file of scripts) vm.runInContext(fs.readFileSync(file, 'utf8'), after, { filename: file });
-    const compare = label => assert.equal(vm.runInContext(snapshot, after), vm.runInContext(snapshot, before), label);
-    compare('arranque');
-    const steps = [
-      `chooseFaction('${faction}'); draw();`,
-      `spawn('worker'); for(let i=0;i<200;i++) tick(.05); updateUI(); draw();`,
-      `ore=5000;plasma=5000;for(const type of ['depot','barracks','refinery','workshop','lab','hangar']) building(type,'blue',300,550); spawn('tank');spawn('ship');spawn('transport');buyUpgrade('armor');buyUpgrade('damage');buyUpgrade('engine');`,
-      `$('allCombat').onclick();order({x:400,y:550});setZoom(1.25);for(let i=0;i<200;i++) tick(.05);updateUI();draw();`,
-      `reset();draw();`
-    ];
-    for (const step of steps) { vm.runInContext(step, before); vm.runInContext(step, after); compare(step); }
-    console.log(`OK: ${faction}, ${mobile ? 'móvil' : 'escritorio'}`);
-  }
-}
-console.log(`OK: ${Object.keys(spriteData).length} sprites idénticos, rutas locales y simulación equivalentes.`);

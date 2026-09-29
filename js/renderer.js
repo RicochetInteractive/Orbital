@@ -13,35 +13,8 @@ function sprite(key, x, y, w, h) { let im = sprites[key]; if (im && im.complete 
     g.drawImage(im, x - w / 2, y - h / 2, w, h);
     return true;
 } return false; }
-function grid() { let left = Math.max(0, Math.floor(camera.x / T) - 1), right = Math.min(COLS - 1, Math.ceil((camera.x + viewW()) / T) + 1), top = Math.max(0, Math.floor(camera.y / T) - 1), bottom = Math.min(ROWS - 1, Math.ceil((camera.y + viewH()) / T) + 1); for (let row = top; row <= bottom; row++)
-    for (let col = left; col <= right; col++) {
-        let type = terrain[row * COLS + col], x = col * T, y = row * T;
-        g.fillStyle = type === 'water' ? '#1c6077' : type === 'cliff' ? '#6d7780' : type === 'sand' ? '#747267' : '#2c5f57';
-        g.fillRect(x, y, T + 1, T + 1);
-        if (type === 'water') {
-            g.strokeStyle = '#85d6df55';
-            g.lineWidth = 2;
-            g.beginPath();
-            g.moveTo(x + 6, y + 21);
-            g.quadraticCurveTo(x + 20, y + 17, x + 34, y + 21);
-            g.stroke();
-        }
-        else if (type === 'cliff') {
-            g.fillStyle = '#abb1a377';
-            g.beginPath();
-            g.moveTo(x + 5, y + 31);
-            g.lineTo(x + 19, y + 7);
-            g.lineTo(x + 34, y + 33);
-            g.fill();
-        }
-        else {
-            g.globalAlpha = .12;
-            sprite('ground', x + 20, y + 20, 40, 40);
-            g.globalAlpha = 1;
-        }
-    } }
-function bar(o, w) { g.fillStyle = '#091c20'; g.fillRect(o.x - w / 2, o.y - o.r - 17, w, 5); g.fillStyle = color[o.team]; g.fillRect(o.x - w / 2, o.y - o.r - 17, w * clamp(o.hp / o.max, 0, 1), 5); }
-function drawBuilding(b) { g.fillStyle = '#071824aa'; g.beginPath(); g.ellipse(b.x, b.y + b.r * .62, b.r * 1.35, b.r * .55, 0, 0, 7); g.fill(); g.strokeStyle = color[b.team]; g.lineWidth = 5; g.beginPath(); g.ellipse(b.x, b.y + b.r * .55, b.r * 1.3, b.r * .56, 0, 0, 7); g.stroke(); sprite(b.type === 'tower' && b.team === 'red' ? 'towerRed' : b.type, b.x, b.y - b.r * .2, b.r * 2.95, b.r * 2.56); if (b.type === 'castle') {
+function bar(o, w) { g.fillStyle = '#091c20'; g.fillRect(o.x - w / 2, o.y - o.r - 17, w, 5); g.fillStyle = o.hp / o.max < .3 ? '#ef8277' : color[o.team]; g.fillRect(o.x - w / 2, o.y - o.r - 17, w * clamp(o.hp / o.max, 0, 1), 5); }
+function drawBuilding(b) { g.save(); if (b.buildTime) g.globalAlpha = .55; g.fillStyle = '#071824aa'; g.beginPath(); g.ellipse(b.x, b.y + b.r * .62, b.r * 1.35, b.r * .55, 0, 0, 7); g.fill(); g.strokeStyle = color[b.team] + 'aa'; g.lineWidth = 2; g.beginPath(); g.ellipse(b.x, b.y + b.r * .55, b.r * 1.3, b.r * .56, 0, 0, 7); g.stroke(); sprite(b.type === 'tower' && b.team === 'red' ? 'towerRed' : b.type, b.x, b.y - b.r * .2, b.r * 2.95, b.r * 2.56); if (b.type === 'castle' && (mode || inspected === b)) {
     g.strokeStyle = color[b.team] + '66';
     g.lineWidth = 2;
     g.beginPath();
@@ -52,9 +25,9 @@ function drawBuilding(b) { g.fillStyle = '#071824aa'; g.beginPath(); g.ellipse(b
     g.font = 'bold 17px system-ui';
     g.textAlign = 'center';
     g.fillText(enemyName[b.team], b.x, b.y - b.r - 33);
-} g.fillStyle = '#effff8'; g.font = 'bold 16px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(({ base: '⌂', depot: '▣', barracks: '⚑', workshop: '⚙', tower: '', refinery: '◆', lab: '✣', hangar: '✈', castle: '♜' })[b.type], b.x, b.y + b.r * .6); bar(b, b.r * 2); }
+} g.fillStyle = '#effff8'; g.font = 'bold 16px system-ui'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(({ base: '⌂', depot: '▣', barracks: '⚑', workshop: '⚙', tower: '', refinery: '◆', lab: '✣', hangar: '✈', castle: '♜' })[b.type], b.x, b.y + b.r * .6); bar(b, b.r * 2); g.restore(); }
 function drawUnit(u) { if (u.embarked)
-    return; g.fillStyle = '#091b22aa'; g.beginPath(); g.ellipse(u.x, u.y + u.r * .7, u.r * 1.5, u.r * .65, 0, 0, 7); g.fill(); let size = spec[u.type].kind === 'air' ? 51 : spec[u.type].kind === 'vehicle' ? 51 : 45; sprite(u.type, u.x, u.y, size, size); g.strokeStyle = selected.includes(u) ? '#fff499' : color[u.team]; g.lineWidth = selected.includes(u) ? 4 : 2.5; g.beginPath(); if (u.team === 'violet')
+    return; g.fillStyle = '#091b22aa'; g.beginPath(); g.ellipse(u.x, u.y + u.r * .7, u.r * 1.5, u.r * .65, 0, 0, 7); g.fill(); let size = spec[u.type].kind === 'air' ? 51 : spec[u.type].kind === 'vehicle' ? 51 : 45; sprite(u.type, u.x, u.y, size, size); g.strokeStyle = selected.includes(u) ? '#fff0b3' : color[u.team] + '88'; g.lineWidth = selected.includes(u) ? 2.5 : 1; g.beginPath(); if (u.team === 'violet')
     g.rect(u.x - u.r - 9, u.y - u.r - 9, (u.r + 9) * 2, (u.r + 9) * 2);
 else if (u.team === 'amber') {
     g.moveTo(u.x, u.y - u.r - 12);
@@ -112,26 +85,12 @@ function drawMini() { mg.drawImage(miniTerrain, 0, 0); for (let n of nodes) {
     mg.arc(u.x / W * 210, u.y / H * 130, u.team === 'blue' ? 3 : 4.5, 0, Math.PI * 2);
     mg.fill();
 } mg.strokeStyle = '#fff3ae'; mg.lineWidth = 2; mg.strokeRect(camera.x / W * 210 + 1, camera.y / H * 130 + 1, Math.max(2, viewW() / W * 210 - 2), Math.max(2, viewH() / H * 130 - 2)); }
-function draw() { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d202d'; g.fillRect(0, 0, c.width, c.height); let scale = camera.dpr * camera.zoom; g.setTransform(scale, 0, 0, scale, -camera.x * scale, -camera.y * scale); grid(); for (let n of nodes) {
+function draw() { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d202d'; g.fillRect(0, 0, c.width, c.height); let scale = camera.dpr * camera.zoom; g.setTransform(scale, 0, 0, scale, -camera.x * scale, -camera.y * scale); drawTerrain(); for (let n of nodes) {
     if (n.amount <= 0 || n.x < camera.x - 50 || n.x > camera.x + viewW() + 50 || n.y < camera.y - 50 || n.y > camera.y + viewH() + 50)
         continue;
-    g.fillStyle = n.owner ? color[n.owner] : (n.type === 'plasma' ? '#ab67d2' : '#60b6cc');
-    g.beginPath();
-    g.arc(n.x, n.y, 22, 0, 7);
-    g.fill();
-    if (n.claimTeam) {
-        g.strokeStyle = color[n.claimTeam];
-        g.lineWidth = 5;
-        g.beginPath();
-        g.arc(n.x, n.y, 26, -Math.PI / 2, -Math.PI / 2 + n.capture / 100 * Math.PI * 2);
-        g.stroke();
-    }
-    sprite(n.type === 'plasma' ? 'plasma' : 'ore', n.x, n.y, 37, 37);
-    g.strokeStyle = n.type === 'plasma' ? '#efbbff' : '#b8ffff';
-    g.lineWidth = 2;
-    g.stroke();
+    drawResource(n);
 } for (let v of villages) {
-    g.fillStyle = v.owner ? color[v.owner] : '#ecd498';
+    g.fillStyle = v.owner ? color[v.owner] + '55' : '#ecd49844';
     g.beginPath();
     g.arc(v.x, v.y, 29, 0, 7);
     g.fill();
@@ -149,9 +108,9 @@ function draw() { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d202d'; g.f
         g.arc(v.x, v.y, 34, -Math.PI / 2, -Math.PI / 2 + v.capture / 100 * 7);
         g.stroke();
     }
-} for (let b of buildings)
-    drawBuilding(b); for (let u of units)
-    drawUnit(u); for (let p of particles) {
+} for (const entity of [...buildings, ...units.filter(u => !u.embarked)].sort((a, b) => a.y - b.y)) {
+    if (entity.type in plans) drawBuilding(entity); else drawUnit(entity);
+} for (let p of particles) {
     g.strokeStyle = p.heal ? '#b1ffc5' : color[p.team];
     g.lineWidth = 3;
     g.beginPath();
@@ -184,7 +143,7 @@ function draw() { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d202d'; g.f
     g.textAlign = 'center';
     g.fillText(ok ? 'TOCA PARA CONSTRUIR' : 'ZONA BLOQUEADA', ghost.x, ghost.y - d.r - 24);
     g.textAlign = 'left';
-} if (ended) {
+} drawCommandOverlay(); if (ended) {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = '#091826c7';
     g.fillRect(0, 0, c.width, c.height);
@@ -194,5 +153,5 @@ function draw() { g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#0d202d'; g.f
     g.fillText(has('base') ? 'VICTORIA' : 'DERROTA', c.width / 2, c.height / 2);
     g.textAlign = 'left';
 } drawMini(); }
-function frame(now) { let dt = Math.min((now - last) / 1000, .05); last = now; if (started && !ended)
+function frame(now) { let dt = Math.min((now - last) / 1000, .05); last = now; if (started && !ended && !paused)
     tick(dt); draw(); requestAnimationFrame(frame); }

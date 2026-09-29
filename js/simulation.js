@@ -1,7 +1,7 @@
 // Actualización temporal de unidades, edificios, combate y economía.
 'use strict';
 function tick(dt) {
-    seconds += dt;
+    seconds += dt; updateCommand(dt);
     aiTimer += dt;
     trackTimer += dt;
     if (trackTimer >= .55) {
@@ -48,12 +48,16 @@ function tick(dt) {
             continue;
         }
         if (o?.kind === 'board') {
-            if (!board(u, o.target))
+            if (!board(u, o.target, dt))
                 u.order = null;
             continue;
         }
         if (u.type === 'worker' && o?.kind === 'harvest') {
             let n = o.node, home = buildings.filter(b => b.team === u.team && (b.type === 'base' || b.type === 'castle') && !b.buildTime).sort((a, b) => dist(u, a) - dist(u, b))[0], refinery = buildings.some(b => b.team === u.team && b.type === 'refinery' && !b.buildTime);
+            if (!u.carry && n && (n.amount <= 0 || n.owner && n.owner !== u.team)) {
+                const replacement = nodes.filter(v => v.amount > 0 && v.type === n.type && (!v.owner || v.owner === u.team) && dist(u, v) < 550).sort((a, b) => dist(u, a) - dist(u, b))[0];
+                if (replacement) { o.node = n = replacement; u.pathTarget = ''; }
+            }
             if (!home || !n || (!u.carry && n.amount <= 0) || (!u.carry && n.owner && n.owner !== u.team) || (!u.carry && n.type === 'plasma' && !refinery)) {
                 u.order = null;
                 continue;
@@ -98,13 +102,14 @@ function tick(dt) {
                     u.order = null;
             continue;
         }
+        if (o?.kind === 'move') { if (move(u, o.x, o.y, 4, dt)) u.order = null; continue; }
         let target = o?.kind === 'attack' && o.target.hp > 0 ? o.target : null;
         if (target && spec[target.type]?.kind === 'air' && !spec[u.type].airAttack)
             target = null;
         if (!target)
-            target = nearEnemy(u, u.team === 'blue' ? 150 : 160);
+            target = nearEnemy(u, o?.kind === 'hold' ? stats(u).range : Math.max(stats(u).range, u.team === 'blue' ? 150 : 160));
         if (target) {
-            fight(u, target, dt);
+            if (o?.kind !== 'hold' || dist(u, target) <= stats(u).range + target.r && (!spec[u.type].minRange || dist(u, target) >= spec[u.type].minRange)) fight(u, target, dt);
             continue;
         }
         if (o?.kind === 'move' || o?.kind === 'attackMove')

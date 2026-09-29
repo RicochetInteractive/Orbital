@@ -68,7 +68,7 @@ function updateVillages(dt) { for (let v of villages) {
             }
             v.capture += dt * (2 + ranked[0][1] * .75);
             if (v.capture >= 100) {
-                v.owner = team;
+                v.owner = team; v.loyalty = 60;
                 v.claimTeam = null;
                 v.capture = 0;
                 if (team === 'blue')
@@ -82,14 +82,14 @@ function updateVillages(dt) { for (let v of villages) {
     }
     else if (v.claimTeam)
         v.capture = Math.max(0, v.capture - dt * 3);
-    if (v.owner && scores[v.owner]) {
+    if (v.owner) { const policy = v.owner === 'blue' ? policies[taxPolicy] : policies.balanced; const supported = !!scores[v.owner]; v.loyalty = clamp((v.loyalty ?? 60) + dt * (supported ? policy.loyalty : -2), 0, 100); if (v.loyalty <= 0) { if (v.owner === 'blue') say('Una aldea se ha independizado. Restablece su protección.'); v.owner = null; v.bankTimer = 0; continue; } if (!supported) continue;
         v.bankTimer += dt;
         while (v.bankTimer >= 8) {
             v.bankTimer -= 8;
             if (v.owner === 'blue')
-                ore += 10;
+                ore += policy.income;
             else
-                aiBank[v.owner].ore += 10;
+                aiBank[v.owner].ore += policy.income;
         }
     }
 } }

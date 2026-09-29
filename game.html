@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Órbita: frente de ceniza</title>
+  <link rel="stylesheet" href="css/game.css">
+  <script defer src="js/state.js"></script>
+  <script defer src="js/stats.js"></script>
+  <script defer src="js/assets.js"></script>
+  <script defer src="js/world.js"></script>
+  <script defer src="js/entities.js"></script>
+  <script defer src="js/session.js"></script>
+  <script defer src="js/ui.js"></script>
+  <script defer src="js/combat.js"></script>
+  <script defer src="js/economy.js"></script>
+  <script defer src="js/ai.js"></script>
+  <script defer src="js/simulation.js"></script>
+  <script defer src="js/renderer.js"></script>
+  <script defer src="js/controls.js"></script>
+  <script defer src="js/main.js"></script>
+</head>
+<body>
+<header>
+<h1>ÓRBITA <small>FRENTE DE CENIZA</small>
+</h1>
+<span id="factionName">Escaramuza · Sector 07</span>
+</header>
+<div class="layout">
+<main>
+<div class="field" id="field">
+<canvas id="game" aria-label="Campo de batalla">
+</canvas>
+<div id="placement" class="placement" hidden>
+<strong id="placementText">Elige una posición</strong>
+<button id="cancelBuild">Cancelar</button>
+</div>
+<div class="mapbar">
+<canvas id="minimap" width="210" height="130" aria-label="Minimapa interactivo">
+</canvas>
+<span>Los puntos muestran aldeas y ejércitos; los rastros, sus movimientos.</span>
+</div>
+<div id="enemyLegend" class="enemy-legend">
+<span>● <b>Escoria</b>
+</span>
+<span>■ <b>Enjambre</b>
+</span>
+<span>◆ <b>Corsarios</b>
+</span>
+</div>
+<div id="factionPanel" class="faction-panel">
+<h2>Elige tu facción</h2>
+<p>Cada una cambia el modo de jugar. Puedes elegir otra al reiniciar.</p>
+<button data-faction="colonos">🧭 Colonos · +20 % de carga · Pionero exclusivo</button>
+<button data-faction="mecanos">⚙️ Mecanos · +20 % de salud en vehículos · Coloso exclusivo</button>
+<button data-faction="astrales">✨ Astrales · +15 % de velocidad · Eco aéreo exclusivo</button>
+</div>
+<div class="view-controls">
+<button id="zoomOut" aria-label="Alejar vista">−</button>
+<button id="zoomIn" aria-label="Acercar vista">+</button>
+</div>
+</div>
+</main>
+<aside class="control-panel">
+<div class="stats">
+<div class="stat">
+<span>💎</span>
+<strong id="minerals">0</strong>
+</div>
+<div class="stat">
+<span>⚡</span>
+<strong id="plasma">0</strong>
+</div>
+<div class="stat">
+<span>👥</span>
+<strong id="supply">0/0</strong>
+</div>
+<div class="stat">
+<span>⏱️</span>
+<strong id="clock">00:00</strong>
+</div>
+</div>
+<div class="tabs">
+<button data-tab="units" class="active">Unidades</button>
+<button data-tab="buildings">Edificios</button>
+<button data-tab="research">Mejoras</button>
+<button data-tab="groups">Grupos</button>
+</div>
+<div id="unitsPanel" class="panel-list">
+<button id="worker">🛠️ Recolector · 50</button>
+<button id="soldier">🛡️ Guardián · 75</button>
+<button id="scout">⚡ Explorador · 65</button>
+<button id="medic">💚 Sanador · 90</button>
+<button id="tank">🚜 Ariete · 170 💎 +35 ⚡</button>
+<button id="artillery">💥 Artillería · 210 💎 +70 ⚡</button>
+<button id="ship">🛸 Caza · 150 💎 +55 ⚡</button>
+<button id="transport">🚁 Transporte · 130 💎 +80 ⚡</button>
+<button id="ranger" hidden>🧭 Pionero · 100 💎 +10 ⚡</button>
+<button id="mech" hidden>⚙️ Coloso · 210 💎 +55 ⚡</button>
+<button id="wraith" hidden>✨ Eco · 160 💎 +65 ⚡</button>
+<p>El cuartel entrena tropas; el taller, vehículos; el hangar, naves.</p>
+</div>
+<div id="buildingsPanel" class="panel-list" hidden>
+<button id="depot">📦 Depósito · 125</button>
+<button id="barracks">🏠 Cuartel · 150</button>
+<button id="workshop">⚙️ Taller · vehículos · 200</button>
+<button id="tower">🎯 Torreta · 140</button>
+<button id="refinery">⚡ Refinería · permite extraer plasma · 140 💎</button>
+<button id="lab">🔬 Laboratorio · 180 💎 +40 ⚡</button>
+<button id="hangar">🛸 Hangar · 200 💎 +60 ⚡</button>
+<button id="castle">🏰 Castillo · recursos y aldeas · 190 💎</button>
+<p>La refinería permite a los recolectores sacar plasma morado: selecciónalos y toca un cristal morado. El taller construye arietes, artillería y el Coloso. El laboratorio compra mejoras. El castillo captura yacimientos a 255 unidades y aldeas neutrales a 280. Las tropas próximas refuerzan su influencia. Una aldea aliada entrega 10 minerales cada 8 segundos mientras mantengas un castillo cerca. El plasma necesita refinería.</p>
+</div>
+<div id="researchPanel" class="panel-list" hidden>
+<button id="upDamage">🎯 Armamento · nivel 0/3</button>
+<button id="upArmor">🛡️ Blindaje · nivel 0/3</button>
+<button id="upEngine">⚡ Motores · nivel 0/3</button>
+<p>Requiere laboratorio. Las mejoras afectan a las unidades existentes y futuras.</p>
+</div>
+<div id="groupsPanel" class="panel-list" hidden>
+<button id="allCombat">Seleccionar tropas</button>
+<button id="allWorkers">Seleccionar recolectores</button>
+<button id="loadTransport">Cargar transporte cercano</button>
+<button id="unloadTransport">Descargar transporte</button>
+<p id="instructions">Selecciona con clic y da órdenes con clic derecho. Arrastra para seleccionar varias unidades.</p>
+</div>
+<div class="readout">
+<p id="selected">Selecciona una unidad.</p>
+<div id="unitStats" class="unit-stats">
+</div>
+<p id="status">
+</p>
+</div>
+<div class="extra-actions">
+<button id="restart">Reiniciar partida</button>
+</div>
+</aside>
+</div>
+<footer>Objetivo: destruye las tres bases enemigas. Los rivales reúnen recursos, producen tropas y compiten por aldeas neutrales. Los castillos capturan aldeas cercanas para obtener ingresos periódicos. Agua y riscos bloquean unidades terrestres. Partida local sin conexión. Gráficos CC0 de <a href="https://kenney.nl/assets/top-down-shooter">Kenney Top-down Shooter</a> y <a href="https://kenney.nl/assets/tower-defense-top-down">Kenney Tower Defense</a> y <a href="https://kenney.nl/assets/isometric-buildings">Kenney Isometric Buildings</a>.</footer>
+</body>
+</html>

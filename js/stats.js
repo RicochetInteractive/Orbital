@@ -1,0 +1,25 @@
+// Datos de equilibrio: unidades, edificios, roles, mejoras y estadísticas efectivas.
+'use strict';
+const color = { blue: '#4ce4fb', red: '#ff4d58', violet: '#9e5bff', amber: '#ffb526' };
+const enemyName = { red: 'Escoria', violet: 'Enjambre', amber: 'Corsarios' };
+const spec = {
+    worker: { name: 'Recolector', hp: 70, speed: 78, range: 16, damage: 4, rate: .9, r: 11, ore: 50, plasma: 0, pop: 1, kind: 'ground' },
+    soldier: { name: 'Guardián', hp: 130, speed: 68, range: 110, damage: 15, rate: .72, r: 13, ore: 75, plasma: 0, pop: 1, kind: 'ground', requires: 'barracks', airAttack: true },
+    scout: { name: 'Explorador', hp: 75, speed: 116, range: 75, damage: 10, rate: .47, r: 11, ore: 65, plasma: 0, pop: 1, kind: 'ground', requires: 'barracks', airAttack: true },
+    medic: { name: 'Sanador', hp: 95, speed: 74, range: 0, damage: 0, rate: .75, r: 12, ore: 90, plasma: 15, pop: 2, kind: 'ground', requires: 'barracks' },
+    tank: { name: 'Ariete', hp: 330, speed: 48, range: 145, damage: 32, rate: 1.2, r: 17, ore: 170, plasma: 35, pop: 3, kind: 'vehicle', requires: 'workshop' },
+    artillery: { name: 'Artillería', hp: 155, speed: 40, range: 275, minRange: 70, damage: 48, rate: 2.2, r: 16, ore: 210, plasma: 70, pop: 3, kind: 'vehicle', requires: 'workshop', splash: 48 },
+    ship: { name: 'Caza', hp: 170, speed: 128, range: 130, damage: 19, rate: .58, r: 15, ore: 150, plasma: 55, pop: 2, kind: 'air', requires: 'hangar', airAttack: true },
+    transport: { name: 'Transporte', hp: 245, speed: 106, range: 0, damage: 0, rate: 1, r: 18, ore: 130, plasma: 80, pop: 2, kind: 'air', requires: 'hangar', capacity: 4 },
+    ranger: { name: 'Pionero', hp: 100, speed: 90, range: 170, damage: 16, rate: .8, r: 12, ore: 100, plasma: 10, pop: 2, kind: 'ground', requires: 'barracks', faction: 'colonos', airAttack: true },
+    mech: { name: 'Coloso', hp: 460, speed: 43, range: 145, damage: 39, rate: 1.25, r: 19, ore: 210, plasma: 55, pop: 4, kind: 'vehicle', requires: 'workshop', faction: 'mecanos' },
+    wraith: { name: 'Eco', hp: 125, speed: 148, range: 135, damage: 17, rate: .55, r: 14, ore: 160, plasma: 65, pop: 2, kind: 'air', requires: 'hangar', faction: 'astrales', airAttack: true },
+    raider: { name: 'Incursor', hp: 100, speed: 66, range: 90, damage: 11, rate: .88, r: 12, ore: 70, plasma: 0, pop: 1, kind: 'ground', airAttack: true },
+    brute: { name: 'Demoledor', hp: 215, speed: 48, range: 48, damage: 25, rate: 1.05, r: 16, ore: 105, plasma: 0, pop: 2, kind: 'ground' },
+    drone: { name: 'Dron', hp: 95, speed: 115, range: 105, damage: 12, rate: .68, r: 13, ore: 100, plasma: 25, pop: 2, kind: 'air', airAttack: true }
+};
+const plans = { base: { name: 'Núcleo', hp: 1200, r: 38, ore: 0, plasma: 0 }, depot: { name: 'Depósito', hp: 350, r: 25, ore: 125, plasma: 0 }, barracks: { name: 'Cuartel', hp: 440, r: 29, ore: 150, plasma: 0 }, refinery: { name: 'Refinería', hp: 340, r: 25, ore: 140, plasma: 0 }, workshop: { name: 'Taller', hp: 540, r: 30, ore: 200, plasma: 35, requires: 'barracks' }, tower: { name: 'Torreta', hp: 340, r: 22, ore: 140, plasma: 0, requires: 'barracks' }, lab: { name: 'Laboratorio', hp: 400, r: 27, ore: 180, plasma: 40, requires: 'refinery' }, hangar: { name: 'Hangar', hp: 510, r: 31, ore: 200, plasma: 60, requires: 'workshop' }, castle: { name: 'Castillo', hp: 700, r: 34, ore: 190, plasma: 0 } };
+const role = { worker: 'Extrae minerales y plasma.', soldier: 'Infantería capaz de atacar naves.', scout: 'Reconocimiento y hostigamiento rápido.', medic: 'Cura tropas y edificios cercanos.', tank: 'Blindado eficaz contra edificios.', artillery: 'Daño de área y alcance largo; vulnerable de cerca.', ship: 'Nave de combate que atraviesa obstáculos.', transport: 'Carga hasta 4 suministros de tropas terrestres.', ranger: 'Tirador de largo alcance de los Colonos.', mech: 'Blindado pesado de los Mecanos.', wraith: 'Nave rápida de los Astrales.', raider: 'Infantería enemiga.', brute: 'Unidad pesada enemiga.', drone: 'Nave enemiga.' };
+function stats(u) { let d = spec[u.type], blue = u.team === 'blue', levels = blue ? upgrades : aiTech[u.team] || { armor: 0, damage: 0, engine: 0 }, arm = levels.armor, atk = levels.damage, engine = levels.engine, vehicle = d.kind === 'vehicle'; return { hp: Math.round(d.hp * (1 + .15 * arm) * (blue && faction === 'mecanos' && vehicle ? 1.2 : 1)), damage: Math.round(d.damage * (1 + .2 * atk)), speed: Math.round(d.speed * (1 + .12 * engine) * (blue && faction === 'astrales' ? 1.15 : 1)), range: d.range, rate: d.rate }; }
+function supply() { return { used: units.filter(u => u.team === 'blue').reduce((sum, u) => sum + (spec[u.type].pop || 0), 0), max: 10 + buildings.filter(b => b.team === 'blue' && b.type === 'depot').length * 6 }; }
+const research = { damage: { name: 'Armamento', ore: 80, plasma: 35, description: '+20 % daño por nivel' }, armor: { name: 'Blindaje', ore: 90, plasma: 45, description: '+15 % salud por nivel' }, engine: { name: 'Motores', ore: 75, plasma: 40, description: '+12 % velocidad por nivel' } };
